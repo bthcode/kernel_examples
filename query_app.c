@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -29,6 +30,20 @@ void clr_vars(int fd)
         perror("query_apps ioctl clr");
     }
 }
+void fill_buf(int fd)
+{
+    query_buf_t qb;
+    posix_memalign((void **) (&qb.buf), 4096, 4096);
+    qb.len = 4096;
+    if (ioctl(fd, QUERY_FILL_BUFFER, &qb) == -1)
+        perror("query_apps ioctl fill buffer");
+    int ii = 0;
+    for (ii=0; ii<12; ii++)
+        printf("%x ", (uint8_t) qb.buf[ii]); 
+    printf("\n");
+   
+}
+
 void set_vars(int fd)
 {
     int v;
@@ -61,7 +76,8 @@ int main(int argc, char *argv[])
     {
         e_get,
         e_clr,
-        e_set
+        e_set,
+        e_buf
     } option;
  
     if (argc == 1)
@@ -82,9 +98,13 @@ int main(int argc, char *argv[])
         {
             option = e_set;
         }
+        else if (strcmp(argv[1], "-b") == 0)
+        {
+            option = e_buf;
+        }
         else
         {
-            fprintf(stderr, "Usage: %s [-g | -c | -s]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-g | -c | -s | -b]\n", argv[0]);
             return 1;
         }
     }
@@ -111,6 +131,8 @@ int main(int argc, char *argv[])
         case e_set:
             set_vars(fd);
             break;
+        case e_buf:
+            fill_buf(fd);
         default:
             break;
     }

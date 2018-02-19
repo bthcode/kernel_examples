@@ -1,3 +1,4 @@
+#include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -32,6 +33,9 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
 #endif
 {
     query_arg_t q;
+    int ctr;
+    char * localbuf;
+    query_buf_t * dest_qb;
  
     switch (cmd)
     {
@@ -48,6 +52,15 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
             status = 0;
             dignity = 0;
             ego = 0;
+            break;
+        case QUERY_FILL_BUFFER:
+            localbuf = (char *) kmalloc(4096, GFP_USER);
+            for (ctr=0; ctr<4096; ctr++) localbuf[ctr] = ctr % 256; 
+            dest_qb = (query_buf_t *) arg; 
+            if (copy_to_user(dest_qb->buf, localbuf, sizeof(query_buf_t)))
+            {
+                return -EACCES;
+            }
             break;
         case QUERY_SET_VARIABLES:
             if (copy_from_user(&q, (query_arg_t *)arg, sizeof(query_arg_t)))

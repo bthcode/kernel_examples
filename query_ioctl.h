@@ -6,9 +6,16 @@ typedef struct
 {
     int status, dignity, ego;
 } query_arg_t;
+
+typedef struct
+{
+    char * buf;
+    size_t len;
+} query_buf_t;
  
 #define QUERY_GET_VARIABLES _IOR('q', 1, query_arg_t *)
 #define QUERY_CLR_VARIABLES _IO('q', 2)
 #define QUERY_SET_VARIABLES _IOW('q', 3, query_arg_t *)
+#define QUERY_FILL_BUFFER   _IOW('q', 4, query_buf_t *)
  
 #endif
