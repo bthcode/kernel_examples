@@ -41,8 +41,28 @@ void fill_buf(int fd)
     for (ii=0; ii<12; ii++)
         printf("%x ", (uint8_t) qb.buf[ii]); 
     printf("\n");
+    for (ii=4086; ii<4096; ii++)
+        printf("%x ", (uint8_t) qb.buf[ii]); 
+    printf("\n");
    
 }
+void copy_buf(int fd)
+{
+    query_buf_t qb;
+    posix_memalign((void **) (&qb.buf), 4096, 4096);
+    qb.len = 4096;
+    if (ioctl(fd, QUERY_MEMCPY_BUFFER, &qb) == -1)
+        perror("query_apps ioctl fill buffer");
+    int ii = 0;
+    for (ii=0; ii<12; ii++)
+        printf("%x ", (uint8_t) qb.buf[ii]); 
+    printf("\n");
+    for (ii=4086; ii<4096; ii++)
+        printf("%x ", (uint8_t) qb.buf[ii]); 
+
+    printf("\n");
+}
+
 
 void set_vars(int fd)
 {
@@ -77,7 +97,8 @@ int main(int argc, char *argv[])
         e_get,
         e_clr,
         e_set,
-        e_buf
+        e_buf,
+	    e_cp
     } option;
  
     if (argc == 1)
@@ -102,15 +123,19 @@ int main(int argc, char *argv[])
         {
             option = e_buf;
         }
+        else if (strcmp(argv[1], "-p") == 0)
+        {
+            option = e_cp;
+        }
         else
         {
-            fprintf(stderr, "Usage: %s [-g | -c | -s | -b]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-g | -c | -s | -b | -p]\n", argv[0]);
             return 1;
         }
     }
     else
     {
-        fprintf(stderr, "Usage: %s [-g | -c | -s]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-g | -c | -s | -p]\n", argv[0]);
         return 1;
     }
     fd = open(file_name, O_RDWR);
@@ -133,6 +158,10 @@ int main(int argc, char *argv[])
             break;
         case e_buf:
             fill_buf(fd);
+            break;
+        case e_cp:
+            copy_buf(fd);
+            break;
         default:
             break;
     }

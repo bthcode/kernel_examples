@@ -33,3 +33,6 @@ File I/O From Kernel:
 
 Linux Device Drivers Examples:
     https://github.com/martinezjavier/ldd3
+
+Userspace Access From Kernel:
+    https://www.ibm.com/developerworks/library/l-kernel-memory-access/
