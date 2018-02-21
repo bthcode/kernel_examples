@@ -6,15 +6,15 @@
 #include <string.h>
 #include <sys/ioctl.h>
  
-#include "query_ioctl.h"
+#include "ioctl_example.h"
  
 void get_vars(int fd)
 {
-    query_arg_t q;
+    ioctl_example_arg_t q;
  
-    if (ioctl(fd, QUERY_GET_VARIABLES, &q) == -1)
+    if (ioctl(fd, IOCTL_EXAMPLE_GET_VARIABLES, &q) == -1)
     {
-        perror("query_apps ioctl get");
+        perror("ioctl_example_apps ioctl get");
     }
     else
     {
@@ -25,18 +25,18 @@ void get_vars(int fd)
 }
 void clr_vars(int fd)
 {
-    if (ioctl(fd, QUERY_CLR_VARIABLES) == -1)
+    if (ioctl(fd, IOCTL_EXAMPLE_CLR_VARIABLES) == -1)
     {
-        perror("query_apps ioctl clr");
+        perror("ioctl_example_apps ioctl clr");
     }
 }
 void fill_buf(int fd)
 {
-    query_buf_t qb;
+    ioctl_example_buf_t qb;
     posix_memalign((void **) (&qb.buf), 4096, 4096);
     qb.len = 4096;
-    if (ioctl(fd, QUERY_FILL_BUFFER, &qb) == -1)
-        perror("query_apps ioctl fill buffer");
+    if (ioctl(fd, IOCTL_EXAMPLE_FILL_BUFFER, &qb) == -1)
+        perror("ioctl_example_apps ioctl fill buffer");
     int ii = 0;
     for (ii=0; ii<12; ii++)
         printf("%x ", (uint8_t) qb.buf[ii]); 
@@ -48,11 +48,11 @@ void fill_buf(int fd)
 }
 void copy_buf(int fd)
 {
-    query_buf_t qb;
+    ioctl_example_buf_t qb;
     posix_memalign((void **) (&qb.buf), 4096, 4096);
     qb.len = 4096;
-    if (ioctl(fd, QUERY_MEMCPY_BUFFER, &qb) == -1)
-        perror("query_apps ioctl fill buffer");
+    if (ioctl(fd, IOCTL_EXAMPLE_MEMCPY_BUFFER, &qb) == -1)
+        perror("ioctl_example_apps ioctl fill buffer");
     int ii = 0;
     for (ii=0; ii<12; ii++)
         printf("%x ", (uint8_t) qb.buf[ii]); 
@@ -66,9 +66,9 @@ void copy_buf(int fd)
 void start_timer(int fd)
 {
  
-    if (ioctl(fd, QUERY_START_TIMER) == -1)
+    if (ioctl(fd, IOCTL_EXAMPLE_START_TIMER) == -1)
     {
-        perror("query_apps ioctl set");
+        perror("ioctl_example_apps ioctl set");
     }
     sleep(5);
 }
@@ -76,7 +76,7 @@ void start_timer(int fd)
 void set_vars(int fd)
 {
     int v;
-    query_arg_t q;
+    ioctl_example_arg_t q;
  
     printf("Enter Status: ");
     scanf("%d", &v);
@@ -91,9 +91,9 @@ void set_vars(int fd)
     getchar();
     q.ego = v;
  
-    if (ioctl(fd, QUERY_SET_VARIABLES, &q) == -1)
+    if (ioctl(fd, IOCTL_EXAMPLE_SET_VARIABLES, &q) == -1)
     {
-        perror("query_apps ioctl set");
+        perror("ioctl_example_apps ioctl set");
     }
 }
  
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     fd = open(file_name, O_RDWR);
     if (fd == -1)
     {
-        perror("query_apps open");
+        perror("ioctl_example_apps open");
         return 2;
     }
  

@@ -8,7 +8,7 @@
 #include <linux/errno.h>
 #include <asm/uaccess.h>
  
-#include "query_ioctl.h"
+#include "ioctl_example.h"
  
 #define FIRST_MINOR 0
 #define MINOR_CNT 1
@@ -21,16 +21,16 @@ static int myval = 0;
 
 static bool timer_running = false;
 static bool keep_timer_going = false;
-static struct timer_list my_timer;
+static struct timer_list ioctl_exampletimer;
  
-void my_timer_callback( unsigned long data )
+void ioctl_exampletimer_callback( unsigned long data )
 {
-    printk( "my_timer_callback called (%ld).\n", jiffies );
+    printk( "ioctl_exampletimer_callback called (%ld).\n", jiffies );
 
     if (keep_timer_going)
     {
-        setup_timer( &my_timer, my_timer_callback, 0 );
-        if (mod_timer( &my_timer, jiffies + msecs_to_jiffies(200) ))
+        setup_timer( &ioctl_exampletimer, ioctl_exampletimer_callback, 0 );
+        if (mod_timer( &ioctl_exampletimer, jiffies + msecs_to_jiffies(200) ))
         {
             printk("Error in timer callback\n");
             timer_running = false;
@@ -40,56 +40,56 @@ void my_timer_callback( unsigned long data )
     }
     else 
     {
-        printk ("my_timer_callback, not starting new timer\n");
+        printk ("ioctl_exampletimer_callback, not starting new timer\n");
         timer_running = false;
     }
 }
 
 
-static int my_open(struct inode *i, struct file *f)
+static int ioctl_exampleopen(struct inode *i, struct file *f)
 {
     printk("IOCTL EXAMPLE OPENED\n");
     return 0;
 }
 
-static int my_close(struct inode *i, struct file *f)
+static int ioctl_exampleclose(struct inode *i, struct file *f)
 {
     int ret;
     printk("IOCTL EXAMPLE CLOSED\n");
     if (timer_running)
     {
-      ret = del_timer( &my_timer );
+      ret = del_timer( &ioctl_exampletimer );
       if (ret) printk("The timer is still in use...\n");
     }
     return 0;
 }
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
-static int my_ioctl(struct inode *i, struct file *f, unsigned int cmd, unsigned long arg)
+static int ioctl_exampleioctl(struct inode *i, struct file *f, unsigned int cmd, unsigned long arg)
 #else
-static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
+static long ioctl_exampleioctl(struct file *f, unsigned int cmd, unsigned long arg)
 #endif
 {
-    query_arg_t q;
+    ioctl_example_arg_t q;
     int ctr;
     char * localbuf;
-    query_buf_t * dest_qb;
+    ioctl_example_buf_t * dest_qb;
 
  
     switch (cmd)
     {
-        case QUERY_GET_VARIABLES:
-            printk("QUERY_GET_VARIABLES\n");
+        case IOCTL_EXAMPLE_GET_VARIABLES:
+            printk("IOCTL_EXAMPLE_GET_VARIABLES\n");
             q.status = status;
             q.dignity = dignity;
             q.ego = ego;
-            if (copy_to_user((query_arg_t *)arg, &q, sizeof(query_arg_t)))
+            if (copy_to_user((ioctl_example_arg_t *)arg, &q, sizeof(ioctl_example_arg_t)))
             {
                 return -EACCES;
             }
             break;
-        case QUERY_CLR_VARIABLES:
-            printk("QUERY_CLR_VARIABLES\n");
+        case IOCTL_EXAMPLE_CLR_VARIABLES:
+            printk("IOCTL_EXAMPLE_CLR_VARIABLES\n");
             status = 0;
             dignity = 0;
             ego = 0;
@@ -98,14 +98,14 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
         //--------------------------------------------------
         // THIS IOCTL ACCESSES USER MEMORY DIRECTLY
         //--------------------------------------------------
-        case QUERY_FILL_BUFFER:
-            printk("QUERY_FILL_BUFFER\n");
+        case IOCTL_EXAMPLE_FILL_BUFFER:
+            printk("IOCTL_EXAMPLE_FILL_BUFFER\n");
             // STRUCT WITH TARGET POINTER AND SIZE
-            dest_qb = (query_buf_t *) arg; 
+            dest_qb = (ioctl_example_buf_t *) arg; 
             // CHECK MEMORY LOCATION
             if (!access_ok(VERIFY_WRITE, dest_qb->buf, dest_qb->len))
             {
-                printk("ILLEGAL WRITE IN my_ioctl\n");
+                printk("ILLEGAL WRITE IN ioctl_exampleioctl\n");
                 return -EACCES;
             }
             // WRITE TO THE MEMORY
@@ -119,14 +119,14 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
         //--------------------------------------------------
         // THIS IOCTL SHOWS A COPY TO USER SPACE
         //--------------------------------------------------
-	    case QUERY_MEMCPY_BUFFER:
-            printk("QUERY_MEMCPY_BUFFER\n");
+	    case IOCTL_EXAMPLE_MEMCPY_BUFFER:
+            printk("IOCTL_EXAMPLE_MEMCPY_BUFFER\n");
             // STRUCT WITH TARGET POINTER AND AIZE
-            dest_qb = (query_buf_t *) arg; 
+            dest_qb = (ioctl_example_buf_t *) arg; 
             // CHECK MEMORY LOCATION
             if (!access_ok(VERIFY_WRITE, dest_qb->buf, dest_qb->len))
             {
-                printk("ILLEGAL WRITE IN my_ioctl\n");
+                printk("ILLEGAL WRITE IN ioctl_exampleioctl\n");
                 return -EACCES;
             }
 
@@ -146,9 +146,9 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
             // FREE THE TEST PATTERN
             kfree(localbuf);
             break;
-        case QUERY_SET_VARIABLES:
-            printk("QUERY_SET_VARIABLES\n");
-            if (copy_from_user(&q, (query_arg_t *)arg, sizeof(query_arg_t)))
+        case IOCTL_EXAMPLE_SET_VARIABLES:
+            printk("IOCTL_EXAMPLE_SET_VARIABLES\n");
+            if (copy_from_user(&q, (ioctl_example_arg_t *)arg, sizeof(ioctl_example_arg_t)))
             {
                 return -EACCES;
             }
@@ -156,17 +156,17 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
             dignity = q.dignity;
             ego = q.ego;
             break;
-        case QUERY_WORK_QUEUE:
-            printk("QUERY_TASK_QUEUE\n");
+        case IOCTL_EXAMPLE_WORK_QUEUE:
+            printk("IOCTL_EXAMPLE_TASK_QUEUE\n");
             break;
-        case QUERY_TASKLET:
-            printk("QUERY_TASKLET\n");
+        case IOCTL_EXAMPLE_TASKLET:
+            printk("IOCTL_EXAMPLE_TASKLET\n");
             break;
-        case QUERY_START_TIMER:
-            printk("QUERY_START_TIMER\n");
+        case IOCTL_EXAMPLE_START_TIMER:
+            printk("IOCTL_EXAMPLE_START_TIMER\n");
             keep_timer_going = true;
-            setup_timer( &my_timer, my_timer_callback, 0 );
-            if (mod_timer( &my_timer, jiffies + msecs_to_jiffies(200) ))
+            setup_timer( &ioctl_exampletimer, ioctl_exampletimer_callback, 0 );
+            if (mod_timer( &ioctl_exampletimer, jiffies + msecs_to_jiffies(200) ))
             {
                 printk("Error in timer callback\n");
                 timer_running = false;
@@ -181,19 +181,19 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
     return 0;
 }
  
-static struct file_operations query_fops =
+static struct file_operations ioctl_example_fops =
 {
     .owner = THIS_MODULE,
-    .open = my_open,
-    .release = my_close,
+    .open = ioctl_exampleopen,
+    .release = ioctl_exampleclose,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
-    .ioctl = my_ioctl
+    .ioctl = ioctl_exampleioctl
 #else
-    .unlocked_ioctl = my_ioctl
+    .unlocked_ioctl = ioctl_exampleioctl
 #endif
 };
  
-static int __init query_ioctl_init(void)
+static int __init ioctl_example_ioctl_init(void)
 {
     int ret;
     struct device *dev_ret;
@@ -201,12 +201,12 @@ static int __init query_ioctl_init(void)
 
     printk("LOADING IOCTL EXAMPLE\n");
  
-    if ((ret = alloc_chrdev_region(&dev, FIRST_MINOR, MINOR_CNT, "query_ioctl")) < 0)
+    if ((ret = alloc_chrdev_region(&dev, FIRST_MINOR, MINOR_CNT, "ioctl_example_ioctl")) < 0)
     {
         return ret;
     }
  
-    cdev_init(&c_dev, &query_fops);
+    cdev_init(&c_dev, &ioctl_example_fops);
  
     if ((ret = cdev_add(&c_dev, dev, MINOR_CNT)) < 0)
     {
@@ -230,7 +230,7 @@ static int __init query_ioctl_init(void)
     return 0;
 }
  
-static void __exit query_ioctl_exit(void)
+static void __exit ioctl_example_ioctl_exit(void)
 {
     printk("UNLOADING IOCTL EXAMPLE\n");
     device_destroy(cl, dev);
@@ -239,8 +239,8 @@ static void __exit query_ioctl_exit(void)
     unregister_chrdev_region(dev, MINOR_CNT);
 }
  
-module_init(query_ioctl_init);
-module_exit(query_ioctl_exit);
+module_init(ioctl_example_ioctl_init);
+module_exit(ioctl_example_ioctl_exit);
  
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Anil Kumar Pugalia <email_at_sarika-pugs_dot_com>");
