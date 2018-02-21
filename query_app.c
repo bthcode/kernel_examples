@@ -63,6 +63,15 @@ void copy_buf(int fd)
     printf("\n");
 }
 
+void start_timer(int fd)
+{
+ 
+    if (ioctl(fd, QUERY_START_TIMER) == -1)
+    {
+        perror("query_apps ioctl set");
+    }
+    sleep(5);
+}
 
 void set_vars(int fd)
 {
@@ -98,7 +107,8 @@ int main(int argc, char *argv[])
         e_clr,
         e_set,
         e_buf,
-	    e_cp
+	    e_cp,
+        e_tim
     } option;
  
     if (argc == 1)
@@ -127,15 +137,19 @@ int main(int argc, char *argv[])
         {
             option = e_cp;
         }
+        else if (strcmp(argv[1], "-t") == 0)
+        {
+            option = e_tim;
+        }
         else
         {
-            fprintf(stderr, "Usage: %s [-g | -c | -s | -b | -p]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-g | -c | -s | -b | -p | -t]\n", argv[0]);
             return 1;
         }
     }
     else
     {
-        fprintf(stderr, "Usage: %s [-g | -c | -s | -p]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-g | -c | -s | -p | -t]\n", argv[0]);
         return 1;
     }
     fd = open(file_name, O_RDWR);
@@ -161,6 +175,9 @@ int main(int argc, char *argv[])
             break;
         case e_cp:
             copy_buf(fd);
+            break;
+        case e_tim:
+            start_timer(fd);
             break;
         default:
             break;

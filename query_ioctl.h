@@ -18,5 +18,8 @@ typedef struct
 #define QUERY_SET_VARIABLES _IOW('q', 3, query_arg_t *)
 #define QUERY_FILL_BUFFER   _IOW('q', 4, query_buf_t *)
 #define QUERY_MEMCPY_BUFFER _IOW('q', 5, query_buf_t *)
+#define QUERY_WORK_QUEUE    _IO('q', 6)
+#define QUERY_TASKLET       _IO('q', 7)
+#define QUERY_START_TIMER   _IO('q', 8)
  
 #endif

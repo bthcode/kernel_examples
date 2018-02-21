@@ -19,6 +19,32 @@ static struct class *cl;
 static int status = 1, dignity = 3, ego = 5;
 static int myval = 0;
 
+static bool timer_running = false;
+static bool keep_timer_going = false;
+static struct timer_list my_timer;
+ 
+void my_timer_callback( unsigned long data )
+{
+    printk( "my_timer_callback called (%ld).\n", jiffies );
+
+    if (keep_timer_going)
+    {
+        setup_timer( &my_timer, my_timer_callback, 0 );
+        if (mod_timer( &my_timer, jiffies + msecs_to_jiffies(200) ))
+        {
+            printk("Error in timer callback\n");
+            timer_running = false;
+        }
+        else
+            timer_running = true;
+    }
+    else 
+    {
+        printk ("my_timer_callback, not starting new timer\n");
+        timer_running = false;
+    }
+}
+
 
 static int my_open(struct inode *i, struct file *f)
 {
@@ -28,7 +54,13 @@ static int my_open(struct inode *i, struct file *f)
 
 static int my_close(struct inode *i, struct file *f)
 {
+    int ret;
     printk("IOCTL EXAMPLE CLOSED\n");
+    if (timer_running)
+    {
+      ret = del_timer( &my_timer );
+      if (ret) printk("The timer is still in use...\n");
+    }
     return 0;
 }
 
@@ -99,7 +131,8 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
             }
 
             // CREATE A TEST PATTERN - EACH READ WILL START FROM A NEW 'myval'
-            localbuf = (char *) kmalloc(PAGE_SIZE, GFP_USER);
+            localbuf = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
+            //localbuf = (char *)get_zeroed_page(GFP_KERNEL);
             for (ctr=0; ctr<dest_qb->len; ctr++) 
                 localbuf[ctr] = myval + ctr % 256; 
             myval += 1;
@@ -122,6 +155,24 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
             status = q.status;
             dignity = q.dignity;
             ego = q.ego;
+            break;
+        case QUERY_WORK_QUEUE:
+            printk("QUERY_TASK_QUEUE\n");
+            break;
+        case QUERY_TASKLET:
+            printk("QUERY_TASKLET\n");
+            break;
+        case QUERY_START_TIMER:
+            printk("QUERY_START_TIMER\n");
+            keep_timer_going = true;
+            setup_timer( &my_timer, my_timer_callback, 0 );
+            if (mod_timer( &my_timer, jiffies + msecs_to_jiffies(200) ))
+            {
+                printk("Error in timer callback\n");
+                timer_running = false;
+            }
+            else
+                timer_running = true;
             break;
         default:
             return -EINVAL;
