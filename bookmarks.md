@@ -1,3 +1,9 @@
+Core API:
+    https://www.kernel.org/doc/html/v4.12/core-api/index.html
+
+Kernel API:
+    https://www.kernel.org/doc/htmldocs/kernel-api/
+
 Introduction to Linux Kernel:
     https://sysplay.in/blog/linux-kernel-internals/2015/02/introduction-to-linux-kernel/
 
