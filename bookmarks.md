@@ -42,3 +42,6 @@ Linux Device Drivers Examples:
 
 Userspace Access From Kernel:
     https://www.ibm.com/developerworks/library/l-kernel-memory-access/
+
+Select and Poll:
+    http://www.xml.com/ldd/chapter/book/ch05.html#t3
