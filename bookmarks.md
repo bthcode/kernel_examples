@@ -45,3 +45,20 @@ Userspace Access From Kernel:
 
 Select and Poll:
     http://www.xml.com/ldd/chapter/book/ch05.html#t3
+
+Huge Pages:
+===========
+    
+Dependencies:
+
+    yum install libhugetlbfs libhugetlbfs-devel libhugetlbfs-utils
+
+Admin:
+
+   huge_page_setup_helper.py 
+
+Use:
+
+    ioctl_app -p
+
+

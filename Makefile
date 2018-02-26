@@ -3,7 +3,7 @@ obj-m += sysfs_example.o
 obj-m += kernel_thread.o
 obj-m += mmapexample.o
 obj-m += ioctl_example.o
-obj-m += timer_example.o
+obj-m += select_example.o
 
 all: ioctl_app mmap_client 
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules

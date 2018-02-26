@@ -5,8 +5,25 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
+#include <sys/mman.h>
  
 #include "ioctl_example.h"
+
+#define FILE_NAME "/hugepages/hugepagefile"
+#define TWO_MB (2*1024*1024)
+#define LENGTH (128UL*TWO_MB)
+#define PROTECTION (PROT_READ | PROT_WRITE)
+
+#ifdef __ia64__
+#define ADDR (void *)(0x8000000000000000UL)
+#define FLAGS (MAP_SHARED | MAP_FIXED)
+#else
+#define ADDR (void *)(0x0UL)
+#define FLAGS (MAP_SHARED)
+#endif
+
+
  
 void get_vars(int fd)
 {
@@ -49,18 +66,50 @@ void fill_buf(int fd)
 void copy_buf(int fd)
 {
     ioctl_example_buf_t qb;
-    posix_memalign((void **) (&qb.buf), 4096, 4096);
-    qb.len = 4096;
+    printf("copy buf example\n");
+
+    // alloc mmaped buffer using hugepages
+    void * addr;
+    int hpage_fd, ret;
+
+    hpage_fd = open(FILE_NAME, O_CREAT | O_RDWR, 0755);
+    if (fd < 0) {
+        perror("Open failed");
+        return; 
+    }
+
+    printf("opened fd\n");
+
+    addr = mmap(ADDR, LENGTH, PROTECTION, FLAGS, hpage_fd, 0);
+    if (addr == MAP_FAILED) {
+        perror("mmap");
+        unlink(FILE_NAME);
+        return;
+    }
+
+    printf("Returned address is %p\n", addr);
+
+
+    //posix_memalign((void **) (&qb.buf), 4096, 4096);
+    qb.buf = (char *) addr;
+    qb.len = LENGTH;
+    //qb.len = 4096;
     if (ioctl(fd, IOCTL_EXAMPLE_MEMCPY_BUFFER, &qb) == -1)
         perror("ioctl_example_apps ioctl fill buffer");
     int ii = 0;
-    for (ii=0; ii<12; ii++)
+    for (ii=0; ii<24; ii++)
         printf("%x ", (uint8_t) qb.buf[ii]); 
     printf("\n");
-    for (ii=4086; ii<4096; ii++)
+    for (ii=LENGTH-24; ii<LENGTH; ii++)
         printf("%x ", (uint8_t) qb.buf[ii]); 
 
+    for (ii=0; ii<10; ii++)
+        usleep(1e6);
+
     printf("\n");
+    munmap(addr, LENGTH);
+    close(hpage_fd);
+    unlink(FILE_NAME);
 }
 
 void start_timer(int fd)

@@ -17,7 +17,6 @@ static dev_t dev;
 static struct cdev c_dev;
 static struct class *cl;
 static int status = 1, dignity = 3, ego = 5;
-static int myval = 0;
 
 static bool timer_running = false;
 static bool keep_timer_going = false;
@@ -72,7 +71,7 @@ static long ioctl_exampleioctl(struct file *f, unsigned int cmd, unsigned long a
 {
     ioctl_example_arg_t q;
     int ctr;
-    char * localbuf;
+    int * int_buf;
     ioctl_example_buf_t * dest_qb;
 
  
@@ -129,22 +128,13 @@ static long ioctl_exampleioctl(struct file *f, unsigned int cmd, unsigned long a
                 printk("ILLEGAL WRITE IN ioctl_exampleioctl\n");
                 return -EACCES;
             }
+            int_buf = (int *) dest_qb->buf;
 
-            // CREATE A TEST PATTERN - EACH READ WILL START FROM A NEW 'myval'
-            localbuf = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
-            //localbuf = (char *)get_zeroed_page(GFP_KERNEL);
-            for (ctr=0; ctr<dest_qb->len; ctr++) 
-                localbuf[ctr] = myval + ctr % 256; 
-            myval += 1;
-
-            // COPY TO USER
-            if (copy_to_user(dest_qb->buf, localbuf, dest_qb->len))
+            for (ctr=0; ctr<(dest_qb->len)/4; ctr ++)
             {
-                return -EACCES;
+                put_user(ctr, int_buf + ctr);
             }
             
-            // FREE THE TEST PATTERN
-            kfree(localbuf);
             break;
         case IOCTL_EXAMPLE_SET_VARIABLES:
             printk("IOCTL_EXAMPLE_SET_VARIABLES\n");
